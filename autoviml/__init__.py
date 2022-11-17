@@ -7,10 +7,7 @@
 ################################################################################
 # Version
 from .__version__ import __version__, __nlp_version__
-if __name__ == "__main__":
-    module_type = 'Running'
-else:
-    module_type = 'Imported'
+module_type = 'Running' if __name__ == "__main__" else 'Imported'
 viml_version_number = __version__
 nlp_version_number = __nlp_version__
 print("""%s Auto_ViML version: %s. Call using:

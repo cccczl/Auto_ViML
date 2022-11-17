@@ -27,11 +27,7 @@ from collections import OrderedDict
 import time
 #################################################################################################
 def left_subtract(l1,l2):
-    lst = []
-    for i in l1:
-        if i not in l2:
-            lst.append(i)
-    return lst
+    return [i for i in l1 if i not in l2]
 #################################################################################
 def return_dictionary_list(lst_of_tuples):
     """ Returns a dictionary of lists if you send in a list of Tuples"""

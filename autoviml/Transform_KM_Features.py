@@ -120,10 +120,7 @@ def Transform_KM_Features(training_data, training_labels, test_data, km_max=0):
     target = training_labels.name
     train_index =  training_data.index
     test_index =  test_data.index
-    if km_max <= 2:
-        k_max = 2
-    else:
-        k_max = copy.deepcopy(km_max)
+    k_max = 2 if km_max <= 2 else copy.deepcopy(km_max)
     ### Calculate the target scale here => the higher the number the better for target accuracy
     try:
         if training_labels.dtype in [np.float64,np.float32,np.float16]:

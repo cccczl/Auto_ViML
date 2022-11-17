@@ -92,7 +92,7 @@ def print_rare_class(classes, verbose=0):
 # define a function that accepts a vectorizer and calculates its accuracy
 def tokenize_test_by_metric(model, X_train, X_cv, y_train, y_cv,
     target, metric, vect=None, seed=99, modeltype='Classification',verbose=0):
-    if vect==None:
+    if vect is None:
         # use default options for CountVectorizer
         vect = CountVectorizer()
     X_train_dtm = vect.fit_transform(X_train)
@@ -136,6 +136,7 @@ def tokenize_test_by_metric(model, X_train, X_cv, y_train, y_cv,
 ###########     N  L  P    F  U  N C  T  I  O   N  S       #####################
 ################################################################################
 '''Features'''
+
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 from sklearn.decomposition import TruncatedSVD
 
@@ -297,14 +298,10 @@ c_dict = {
   "you've": "you have"
 }
 
-c_re = re.compile('(%s)' % '|'.join(c_dict.keys()))
+c_re = re.compile(f"({'|'.join(c_dict.keys())})")
 ##################################################################################
 def left_subtract(l1,l2):
-    lst = []
-    for i in l1:
-        if i not in l2:
-            lst.append(i)
-    return lst
+    return [i for i in l1 if i not in l2]
 ################################################################################
 def return_stop_words():
     STOP_WORDS = ['it', "this", "that", "to", 'its', 'am', 'is', 'are', 'was', 'were', 'a',
@@ -334,8 +331,7 @@ lemmatizer = WordNetLemmatizer()
 punc = list(set(string.punctuation))+['/;','//']
 
 def casual_tokenizer(text): #Splits words on white spaces (leaves contractions intact) and splits out trailing punctuation
-    tokens = tokenizer.tokenize(text)
-    return tokens
+    return tokenizer.tokenize(text)
 
 #Function to replace the nltk pos tags with the corresponding wordnet pos tag to use the wordnet lemmatizer
 def get_word_net_pos(treebank_tag):
@@ -398,8 +394,7 @@ def remove_stopwords(tweet):
     stop_words = return_stop_words()
     tweet = tweet.lower()
     tweet = ' '.join([x for x in tweet.split(" ") if x not in stop_words])
-    tweet = ''.join([x for x in tweet if x in string.printable])
-    return tweet
+    return ''.join([x for x in tweet if x in string.printable])
 
 # Expand Abbreviations
 # Thanks to https://www.kaggle.com/rftexas/text-only-kfold-bert
@@ -643,8 +638,7 @@ def convert_abbrev_in_text(sentence):
     text = " ".join(sentence.split())
     tokens = text.split(" ")
     tokens = [convert_abbrev(word) for word in tokens]
-    text = ' '.join(tokens)
-    return text
+    return ' '.join(tokens)
 
 def join_words(text):
     return " ".join(text)
@@ -667,8 +661,7 @@ def process_text(text):
     lemma = lemma_wordnet(tagged)
     no_num = [re.sub('[0-9]+', '', each) for each in lemma]
     no_punc = join_words([remove_punctuations(w) for w in no_num ])
-    no_stop = remove_stopwords(no_punc)
-    return no_stop
+    return remove_stopwords(no_punc)
 
 def clean_text(df_x):
     start_time2 = time.time()
@@ -744,12 +737,7 @@ def print_top_feature_grams(X, vectorizer, top_n = 200):
     for i in range(1,4):
         #### set min_df to be low so that you catch at least a few  of them
         try:
-            if i == 1:
-                top_num = int(top_n*2/3)
-            elif i == 2:
-                top_num = int(top_n*1/6)
-            else:
-                top_num = int(top_n*1/6)
+            top_num = int(top_n*2/3) if i == 1 else int(top_n*1/6)
             vectorizer.ngram_range = (i,i)
             XA = vectorizer.fit_transform(X)
             feature_array = vectorizer.get_feature_names()
@@ -774,9 +762,7 @@ def remove_unicode_strings(lst):
         for string_var in lst:
             clean_string = "".join(["" if ord(x) > 127 else x for x in string_var])
             clean_string = " ".join(clean_string.split())
-            if len(clean_string) == 0:
-                pass
-            else:
+            if clean_string != "":
                 ret_lst.append(clean_string)
         return ret_lst
     except:
@@ -803,22 +789,19 @@ def print_top_features(train,nlp_column, best_nlp_vect, target, top_nums=200):
     df_names = []
     if not isinstance(targets,list):
         targets = [target]
+    #### now we split into as many data frames as there are classes in the train data set
+    df_dtms = []
+    count_df = 0
     for target in targets:
         print('\nFor target = %s' %target)
         classes = np.unique(buswo[target])
         classes_copy = copy.deepcopy(classes)
         for itera in classes_copy:
-            if not isinstance(itera, str):
-                new_df_name = 'df_'+str(itera)
-            else:
-                new_df_name = 'df_'+itera
+            new_df_name = 'df_'+itera if isinstance(itera, str) else f'df_{str(itera)}'
             #print('%s is about class=%s of shape: ' %(new_df_name,itera), end='')
             new_df_name = buswo[(buswo[target]==itera)]
             df_names.append(new_df_name)
-            #print(new_df_name.shape)
-        #### now we split into as many data frames as there are classes in the train data set
-        df_dtms = []
-        count_df = 0
+                    #print(new_df_name.shape)
         count_bus_wo = pd.DataFrame()
         all_sorted = []
         for each_df, each_class in zip(df_names,classes):
@@ -945,7 +928,7 @@ def select_top_features_from_SVD(X, tsvd, is_train=True, top_n=100):
                    random_state=3)
         tsvd.fit(X)
     XA = tsvd.transform(X)
-    print('    Reduced dimensional array shape to %s' %(XA.shape,))
+    print(f'    Reduced dimensional array shape to {XA.shape}')
     print('    Time Taken for Truncated SVD = %0.0f seconds' %(time.time()-start_time) )
     return XA, tsvd
 ################################################################################
@@ -958,20 +941,16 @@ def fit_and_predict(model, X_train, y_train, X_cv, modeltype='Classification', i
         #### They are used to fit and predict here ###
         try:
             model.fit(X_train, y_train)
-            y_preds = model.predict(X_cv)
-            return y_preds
+            return model.predict(X_cv)
         except:
             model.fit(X_train.toarray(), y_train)
-            y_preds = model.predict(X_cv)
-            return y_preds
+            return model.predict(X_cv)
     else:
         #### Just use model for predicting here
         try:
-            y_preds = model.predict(X_cv)
-            return y_preds
+            return model.predict(X_cv)
         except:
-            y_preds = model.predict(X_cv.toarray())
-            return y_preds
+            return model.predict(X_cv.toarray())
 ################################################################################
 import copy
 def reduce_dimensions_with_Truncated_SVD(each_df, each_df_dtm, is_train=True,trained_svd=''):
@@ -987,13 +966,11 @@ def reduce_dimensions_with_Truncated_SVD(each_df, each_df_dtm, is_train=True,tra
     ### You have to make sure that you send in a trained SVD and set training to False since this is each_df
     if is_train:
         each_df_dtm1, trained_svd = select_top_features_from_SVD(each_df_dtm, '', True)
-        ls = ['svd_dim_'+str(x) for x in range(each_df_dtm1.shape[1])]
-        each_df_dtm1 = pd.DataFrame(each_df_dtm1,columns=ls, index=orig_each_df_index)
     else:
         each_df_dtm1, _ = select_top_features_from_SVD(each_df_dtm, trained_svd, False)
-        ls = ['svd_dim_'+str(x) for x in range(each_df_dtm1.shape[1])]
-        each_df_dtm1 = pd.DataFrame(each_df_dtm1,columns=ls, index=orig_each_df_index)
-    print('TruncatedSVD Data Frame size = %s' %(each_df_dtm1.shape,))
+    ls = [f'svd_dim_{str(x)}' for x in range(each_df_dtm1.shape[1])]
+    each_df_dtm1 = pd.DataFrame(each_df_dtm1,columns=ls, index=orig_each_df_index)
+    print(f'TruncatedSVD Data Frame size = {each_df_dtm1.shape}')
     return each_df_dtm1, trained_svd
 ###########################################################################
 def transform_combine_top_feats_with_SVD(each_df_dtm, nlp_column, big_nlp_vect, new_vect,
@@ -1023,31 +1000,27 @@ def transform_combine_top_feats_with_SVD(each_df_dtm, nlp_column, big_nlp_vect, 
     ### You have to make sure that you send in a trained SVD and set training to False since this is each_df
     if is_train:
         each_df_dtm1, trained_svd = select_top_features_from_SVD(each_df_dtm, '', True)
-        ls = ['svd_dim_'+str(x) for x in range(each_df_dtm1.shape[1])]
-        each_df_dtm1 = pd.DataFrame(each_df_dtm1,columns=ls, index=orig_each_df_index)
     else:
         each_df_dtm1, _ = select_top_features_from_SVD(each_df_dtm, trained_svd, False)
-        ls = ['svd_dim_'+str(x) for x in range(each_df_dtm1.shape[1])]
-        each_df_dtm1 = pd.DataFrame(each_df_dtm1,columns=ls, index=orig_each_df_index)
+    ls = [f'svd_dim_{str(x)}' for x in range(each_df_dtm1.shape[1])]
+    each_df_dtm1 = pd.DataFrame(each_df_dtm1,columns=ls, index=orig_each_df_index)
     #### You have to create another vector with smaller vocab "small_nlp_vect" vectorizer
     #### You have to make sure you just do a Transform and not a Fit!
     if is_train:
         each_df_dtm2 = small_nlp_vect.fit_transform(each_df[nlp_column])
-        each_df_dtm2 = pd.DataFrame(each_df_dtm2.toarray(),index=orig_each_df_index,
-                                             columns=small_nlp_vect.get_feature_names())
-        #### Since the top features from each class is a pretty bad idea, I am dropping it here!
-        #print('Added top %d features from Train data' %(each_df_dtm2.shape[1]))
+            #### Since the top features from each class is a pretty bad idea, I am dropping it here!
+            #print('Added top %d features from Train data' %(each_df_dtm2.shape[1]))
     else:
         each_df_dtm2 = small_nlp_vect.transform(each_df[nlp_column])
-        each_df_dtm2 = pd.DataFrame(each_df_dtm2.toarray(),index=orig_each_df_index,
-                                             columns=small_nlp_vect.get_feature_names())
-        #### Since the top features from each class is a pretty bad idea, I am dropping it here!
-        #print('Added top %d features from Test data' %(each_df_dtm2.shape[1]))
+            #### Since the top features from each class is a pretty bad idea, I am dropping it here!
+            #print('Added top %d features from Test data' %(each_df_dtm2.shape[1]))
+    each_df_dtm2 = pd.DataFrame(each_df_dtm2.toarray(),index=orig_each_df_index,
+                                         columns=small_nlp_vect.get_feature_names())
     # Now you have to combine them all to get a new each_df_best dataframe
     ### Since the top features from each class is not helping improve model, it is best dropped!
     #each_df_best = each_df_dtm2.join(each_df_dtm1)
     each_df_best = copy.deepcopy(each_df_dtm1)
-    print('TruncatedSVD Data Frame size = %s' %(each_df_best.shape,))
+    print(f'TruncatedSVD Data Frame size = {each_df_best.shape}')
     return each_df_best, big_nlp_vect, small_nlp_vect, trained_svd
 ###########################################################################
 def print_sparse_stats(X_dtm):
@@ -1064,13 +1037,8 @@ def tokenize_and_stem(text):
     text = re.sub("^\d+\s|\s\d+\s|\s\d+$", " ", text)
     # first tokenize by sentence, then by word to ensure that punctuation is caught as it's own token
     tokens = [word for sent in nltk.sent_tokenize(text) for word in nltk.word_tokenize(sent)]
-    filtered_tokens = []
-    # filter out any tokens not containing letters (e.g., numeric tokens, raw punctuation)
-    for token in tokens:
-        if re.search('[a-zA-Z]', token):
-            filtered_tokens.append(token)
-    stems = [stemmer.stem(t) for t in filtered_tokens]
-    return stems
+    filtered_tokens = [token for token in tokens if re.search('[a-zA-Z]', token)]
+    return [stemmer.stem(t) for t in filtered_tokens]
 ################################################################################
 from nltk.stem.snowball import SnowballStemmer
 from nltk.tokenize import TweetTokenizer
@@ -1099,10 +1067,13 @@ def select_best_nlp_vectorizer(model, data, col, target, metric,
         max_features = 500
     else:
         max_features = int(data[col].map(len).mean()*4)
-    print('    A U T O - N L P   P R O C E S S I N G  O N   N L P   C O L U M N = %s ' %col)
+    print(
+        f'    A U T O - N L P   P R O C E S S I N G  O N   N L P   C O L U M N = {col} '
+    )
+
     print('#################################################################################')
-    print('Generating new features for NLP column = %s using NLP Transformers' %col)
-    print('    Cleaning text in %s before doing transformation...' %col)
+    print(f'Generating new features for NLP column = {col} using NLP Transformers')
+    print(f'    Cleaning text in {col} before doing transformation...')
     start_time = time.time()
     if modeltype is None or modeltype == '':
         print('Since modeltype is None, Using TFIDF vectorizer with min_df and max_features')
@@ -1121,11 +1092,12 @@ def select_best_nlp_vectorizer(model, data, col, target, metric,
     max_features_high = int(250000000/X_train.shape[0])
     print('    However max_features limit = %d will limit too many features from being generated' %max_features_high)
     best_vec = None
-    all_vecs = {}
-    all_models = {}
     if data.shape[0] < 10000:
         count_max_df = 0
-        print('Trying multiple max_df values in range %s to find best max_df...' %np.linspace(0.95,0.05,5))
+        print(
+            f'Trying multiple max_df values in range {np.linspace(0.95, 0.05, 5)} to find best max_df...'
+        )
+
         for each_max_df in np.linspace(0.95,0.05,5):
             print('    max_df = %0.4f     ' %each_max_df, end='')
             vect_5000 = CountVectorizer(
@@ -1138,23 +1110,21 @@ def select_best_nlp_vectorizer(model, data, col, target, metric,
             if count_max_df == 0:
                 best_metric = copy.deepcopy(current_metric)
                 best_model = copy.deepcopy(current_model)
-            else:
-                if modeltype == 'Regression' or metric in ['logloss','log_loss']:
-                    if current_metric <= best_metric:
-                        best_metric = copy.deepcopy(current_metric)
-                        best_model = copy.deepcopy(current_model)
-                        best_max_df = copy.deepcopy(each_max_df)
-                    else:
-                        best_max_df = each_max_df + 0.20
-                        break
+            elif modeltype == 'Regression' or metric in ['logloss','log_loss']:
+                if current_metric <= best_metric:
+                    best_metric = copy.deepcopy(current_metric)
+                    best_model = copy.deepcopy(current_model)
+                    best_max_df = copy.deepcopy(each_max_df)
                 else:
-                    if current_metric >= best_metric:
-                        best_metric = copy.deepcopy(current_metric)
-                        best_model = copy.deepcopy(current_model)
-                        best_max_df = copy.deepcopy(each_max_df)
-                    else:
-                        best_max_df = each_max_df + 0.20
-                        break
+                    best_max_df = each_max_df + 0.20
+                    break
+            elif current_metric >= best_metric:
+                best_metric = copy.deepcopy(current_metric)
+                best_model = copy.deepcopy(current_model)
+                best_max_df = copy.deepcopy(each_max_df)
+            else:
+                best_max_df = each_max_df + 0.20
+                break
             count_max_df += 1
         print('Best max_df selected to be %0.2f' %best_max_df)
     else:
@@ -1169,8 +1139,8 @@ def select_best_nlp_vectorizer(model, data, col, target, metric,
                           vect_5000, seed, modeltype,verbose=0)
     #### You have to set the best max df to the recent one plus 0.05 since it breaks when the metric drops
     vect_5000.max_df = best_max_df
-    all_vecs[vect_5000] = best_metric
-    all_models[vect_5000] = best_model
+    all_vecs = {vect_5000: best_metric}
+    all_models = {vect_5000: best_model}
     ##########################################################################
     ##### It's BEST to use small max_features (50) and a low 0.001 min_df with n_gram (2-5).
     ######  There is no need in that case for stopwords or analyzer since the 2-grams take care of it
@@ -1221,16 +1191,17 @@ def select_best_nlp_vectorizer(model, data, col, target, metric,
         print('Error: Using CountVectorizer')
     ######## Once you have built 4 different transformers it is time to compare them
     if modeltype.endswith('Classification'):
-        if metric in ['log_loss','logloss']:
-            best_vec = pd.Series(all_vecs).idxmin()
-        else:
-            best_vec = pd.Series(all_vecs).idxmax()
+        best_vec = (
+            pd.Series(all_vecs).idxmin()
+            if metric in ['log_loss', 'logloss']
+            else pd.Series(all_vecs).idxmax()
+        )
+
+    elif modeltype == 'Regression':
+        best_vec = pd.Series(all_vecs).idxmin()
     else:
-        if modeltype == 'Regression':
-            best_vec = pd.Series(all_vecs).idxmin()
-        else:
-            print('Error: Modeltype not recognized. You must choose Classification or Regression or None')
-            return
+        print('Error: Modeltype not recognized. You must choose Classification or Regression or None')
+        return
     print('\nBest NLP technique selected is: \n%s' %best_vec)
     data_dtm = best_vec.transform(data_dtm)
     return best_vec, all_models[best_vec], data_dtm, max_features_limit
@@ -1272,21 +1243,20 @@ def return_scoreval(scoretype, y_true, y_preds, y_proba, modeltype):
                 scoreval = f1_score(y_true, y_preds)
             except:
                 scoreval = f1_score(y_true, y_preds, average='micro')
+    elif scoretype == 'rmse':
+        try:
+            scoreval = np.sqrt(mean_squared_error(y_true, y_preds))
+        except:
+            scoreval = 0
+    elif scoretype == 'mae':
+        try:
+            scoreval = np.sqrt(mean_absolute_error(y_true, y_preds))
+        except:
+            scoreval = 0
     else:
-        if scoretype == 'rmse':
-            try:
-                scoreval = np.sqrt(mean_squared_error(y_true, y_preds))
-            except:
-                scoreval = 0
-        elif scoretype == 'mae':
-            try:
-                scoreval = np.sqrt(mean_absolute_error(y_true, y_preds))
-            except:
-                scoreval = 0
-        else:
-            print('Scoring Type not Recognized.')
-            scoretype == 'mae'
-            scoreval = mean_absolute_error(y_true, y_preds)
+        print('Scoring Type not Recognized.')
+        scoretype == 'mae'
+        scoreval = mean_absolute_error(y_true, y_preds)
     return scoreval
 ######### Print the % count of each class in a Target variable  #####
 def class_info(classes):

@@ -53,24 +53,19 @@ def gini_sklearn(truth, predictions):
     return gini(truth, predictions) / gini(truth, truth)
 
 def gini_meae(truth, predictions):
-    score = median_absolute_error(truth, predictions)
-    return score
+    return median_absolute_error(truth, predictions)
 
 def gini_msle(truth, predictions):
-    score = np.sqrt(mean_squared_log_error(truth, predictions))
-    return score
+    return np.sqrt(mean_squared_log_error(truth, predictions))
 
 def gini_mae(truth, predictions):
-    score = mean_absolute_error(truth, predictions)
-    return score
+    return mean_absolute_error(truth, predictions)
 
 def gini_mse(truth, predictions):
-    score = np.sqrt(mean_squared_error(truth, predictions))
-    return score
+    return np.sqrt(mean_squared_error(truth, predictions))
 
 def gini_rmse(truth, predictions):
-    score = np.sqrt(mean_squared_error(truth, predictions))
-    return score
+    return np.sqrt(mean_squared_error(truth, predictions))
 
 def gini_accuracy(truth, predictions):
     return 1-accuracy_score(truth, predictions)

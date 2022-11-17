@@ -112,24 +112,23 @@ def check_if_GPU_exists():
         dev_list = device_lib.list_local_devices()
         print('Number of Processors on this device = %d' %len(dev_list))
         for i in range(len(dev_list)):
-            if 'GPU' == dev_list[i].device_type:
+            if dev_list[i].device_type == 'GPU':
                 GPU_exists = True
-                print('%s available' %dev_list[i].device_type)
-            elif 'CPU' == dev_list[i].device_type:
+                print(f'{dev_list[i].device_type} available')
+            elif dev_list[i].device_type == 'CPU':
                 GPU_exists = False
-                print('%s available' %dev_list[i].device_type)
+                print(f'{dev_list[i].device_type} available')
     except:
         print('')
-    if not GPU_exists:
-        try:
-            os.environ['NVIDIA_VISIBLE_DEVICES']
-            print('    GPU active on this device')
-            return True
-        except:
-            print('    No GPU active on this device')
-            return False
-    else:
+    if GPU_exists:
         return True
+    try:
+        os.environ['NVIDIA_VISIBLE_DEVICES']
+        print('    GPU active on this device')
+        return True
+    except:
+        print('    No GPU active on this device')
+        return False
 #############################################################################################
 def modify_array_to_integer(y_pred, negative_flag=False):
     """
@@ -140,18 +139,15 @@ def modify_array_to_integer(y_pred, negative_flag=False):
         y_pred[y_pred<0] = 0
     return y_pred
 ##########################################################################
-def analyze_problem_type(train, target, verbose=0) :
+def analyze_problem_type(train, target, verbose=0):
     target = copy.deepcopy(target)
-    cat_limit = 30 ### this determines the number of categories to name integers as classification ##
     float_limit = 15 ### this limits the number of float variable categories for it to become cat var
     if isinstance(target, str):
         target = [target]
-    if len(target) == 1:
-        targ = target[0]
-    else:
-        targ = target[0]
+    targ = target[0]
     ####  This is where you detect what kind of problem it is #################
-    if  train[targ].dtype in ['int64', 'int32','int16']:
+    if train[targ].dtype in ['int64', 'int32','int16']:
+        cat_limit = 30 ### this determines the number of categories to name integers as classification ##
         if len(train[targ].unique()) <= 2:
             model_class = 'Binary_Classification'
         elif len(train[targ].unique()) > 2 and len(train[targ].unique()) <= cat_limit:
@@ -165,11 +161,10 @@ def analyze_problem_type(train, target, verbose=0) :
             model_class = 'Multi_Classification'
         else:
             model_class = 'Regression'
+    elif len(train[targ].unique()) <= 2:
+        model_class = 'Binary_Classification'
     else:
-        if len(train[targ].unique()) <= 2:
-            model_class = 'Binary_Classification'
-        else:
-            model_class = 'Multi_Classification'
+        model_class = 'Multi_Classification'
     ########### print this for the start of next step ###########
     if verbose <= 1:
         print('''\n################ %s VISUALIZATION Started #####################''' %model_class)
@@ -251,25 +246,21 @@ class My_LabelEncoder(TransformerMixin):
         else:
             return testx
         ins = np.unique(testx.factorize()[1]).tolist()
-        missing = [x for x in ins if x not in self.transformer.keys()]
-        if len(missing) > 0:
+        if missing := [x for x in ins if x not in self.transformer.keys()]:
             for each_missing in missing:
                 max_val = np.max(list(self.transformer.values())) + 1
                 self.transformer[each_missing] = max_val
                 self.inverse_transformer[max_val] = each_missing
-        ### now convert the input to transformer dictionary values
-        outs = testx.map(self.transformer).values
-        return outs
+        return testx.map(self.transformer).values
 
     def inverse_transform(self, testx):
         ### now convert the input to transformer dictionary values
         if isinstance(testx, pd.Series):
-            outs = testx.map(self.inverse_transformer).values
+            return testx.map(self.inverse_transformer).values
         elif isinstance(testx, np.ndarray):
-            outs = pd.Series(testx).map(self.inverse_transformer).values
+            return pd.Series(testx).map(self.inverse_transformer).values
         else:
-            outs = testx[:]
-        return outs
+            return testx[:]
 #################################################################################
 def fill_missing_values_object_or_number(start_train, start_test, fill_num, col,str_flag=True):
     """
@@ -283,7 +274,7 @@ def fill_missing_values_object_or_number(start_train, start_test, fill_num, col,
     new_missing_col = ''
     if start_train[col].isnull().sum() > 0:
         missing_flag = True
-        new_missing_col = col + '_Missing_Flag'
+        new_missing_col = f'{col}_Missing_Flag'
         start_train[new_missing_col] = 0
         start_train.loc[start_train[col].isnull(),new_missing_col]=1
         ### Remember that fillna only works at dataframe level! ###
@@ -309,14 +300,13 @@ def convert_train_test_cat_col_to_numeric(start_train, start_test, col,str_flag=
     new_missing_col = ''
     if start_train[col].isnull().sum() > 0:
         missing_flag = True
+        new_missing_col = f'{col}_Missing_Flag'
         if str_flag:
-            new_missing_col = col + '_Missing_Flag'
             start_train[new_missing_col] = 0
             start_train.loc[start_train[col].isnull(),new_missing_col]=1
             ### Remember that fillna only works at dataframe level! ###
             start_train[[col]] = start_train[[col]].fillna("nan")
         else:
-            new_missing_col = col + '_Missing_Flag'
             start_train[new_missing_col] = 0
             start_train.loc[start_train[col].isnull(),new_missing_col]=1
             ls = start_train[col].unique().astype(str)
@@ -329,14 +319,14 @@ def convert_train_test_cat_col_to_numeric(start_train, start_test, col,str_flag=
         train_categs = start_train[col].value_counts().index.tolist()
     else:
         train_categs = np.unique(start_train[col]).tolist()
-    if not isinstance(start_test,str) :
+    if not isinstance(start_test,str):
         if start_test[col].isnull().sum() > 0:
             #### IN some rare cases, Test data has missing values while Train data doesn.t
             #### This section is to take care of such rare cases. We need to create a missing col
             ####  We need to create that missing flag column in both train and test in that case
             if not missing_flag:
                 missing_flag = True
-                new_missing_col = col + '_Missing_Flag'
+                new_missing_col = f'{col}_Missing_Flag'
                 start_train[new_missing_col] = 0
             #####  THis is to take care of Missing_Flag in start_test data set!!
             start_test[new_missing_col] = 0

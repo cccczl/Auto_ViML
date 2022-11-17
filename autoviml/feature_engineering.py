@@ -59,26 +59,25 @@ def feature_engineering(df, ft_requests, idcol):
     if df.shape[1] < 2:
         print('More than one column in dataframe required to perform feature engineering. Returning')
         return df
-    ft_dict = dict(zip(['add','multiply','subtract','divide'],
-                  ['add_numeric', 'multiply_numeric',
-            'subtract_numeric', 'divide_numeric']))
     if len(ft_requests) > 0:
         ft_list = []
+        ft_dict = dict(zip(['add','multiply','subtract','divide'],
+                      ['add_numeric', 'multiply_numeric',
+                'subtract_numeric', 'divide_numeric']))
         for ft_one in ft_requests:
-            if ft_one in ft_dict.keys():
+            if ft_one in ft_dict:
                 ft_list.append(ft_dict[ft_one])
             else:
-                print('    Cannot perform %s-type feature engineering...' %ft_one)
+                print(f'    Cannot perform {ft_one}-type feature engineering...')
         cols = [x for x in df.columns.tolist() if x not in [idcol]]
         for each_ft, count in zip(ft_list, range(len(ft_list))):
             if count == 0:
                 df_mod = add_computational_primitive_features(df,[each_ft], idcol)
-                print(df_mod.shape)
             else:
                 df_temp = add_computational_primitive_features(df,[each_ft], idcol)
                 df_temp.drop(cols,axis=1,inplace=True)
                 df_mod = pd.concat([df_mod,df_temp],axis=1,ignore_index=False)
-                print(df_mod.shape)
+            print(df_mod.shape)
     else:
         df_mod = add_computational_primitive_features(df,[], idcol)
     return df_mod
@@ -97,10 +96,9 @@ def add_date_time_features(smalldf, startTime, endTime, splitter_date_string="/"
     splitter_hour_string: usually there is a string such as ':' or '.' between hour:min:sec etc. Default is assumed : here.
     """
     smalldf = smalldf.copy()
-    add_cols = []
     start_date = 'processing'+startTime+'_start_date'
     smalldf[start_date] = smalldf[startTime].map(lambda x: x.split(" ")[0])
-    add_cols.append(start_date)
+    add_cols = [start_date]
     try:
         start_time = 'processing'+startTime+'_start_time'
         smalldf[start_time] = smalldf[startTime].map(lambda x: x.split(" ")[1])
@@ -258,7 +256,10 @@ def FE_create_groupby_features(dft, groupby_columns, numeric_columns, agg_types)
     """
     start_time = time.time()
     grouped_sep = pd.DataFrame()
-    print('Autoviml Feature Engineering: creating groupby features using %s' %groupby_columns)
+    print(
+        f'Autoviml Feature Engineering: creating groupby features using {groupby_columns}'
+    )
+
     ##########  This is where we create new columns by each numeric column grouped by group-by columns given.
     if isinstance(numeric_columns, list):
         pass
@@ -277,18 +278,18 @@ def FE_create_groupby_features(dft, groupby_columns, numeric_columns, agg_types)
             agg_type = 'mean'
         try:
             prefix = numeric_column + '_'
-            if agg_type in ['Sum', 'sum']:
+            if agg_type in {'Sum', 'sum'}:
                 grouped_agg = grouped.sum()
-            elif agg_type in ['Mean', 'mean','Average','average']:
+            elif agg_type in {'Mean', 'mean', 'Average', 'average'}:
                 grouped_agg = grouped.mean()
-            elif agg_type in ['count', 'Count']:
+            elif agg_type in {'count', 'Count'}:
                 grouped_agg = grouped.count()
-            elif agg_type in ['Median', 'median']:
+            elif agg_type in {'Median', 'median'}:
                 grouped_agg = grouped.median()
-            elif agg_type in ['Maximum', 'maximum','max', 'Max']:
+            elif agg_type in {'Maximum', 'maximum', 'max', 'Max'}:
                 ## maximum of the amounts
                 grouped_agg = grouped.max()
-            elif agg_type in ['Minimum', 'minimum','min', 'Min']:
+            elif agg_type in {'Minimum', 'minimum', 'min', 'Min'}:
                 ## maximum of the amounts
                 grouped_agg = grouped.min()
             else:

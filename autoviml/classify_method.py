@@ -19,11 +19,7 @@ from functools import reduce
 import copy
 import time
 def left_subtract(l1,l2):
-    lst = []
-    for i in l1:
-        if i not in l2:
-            lst.append(i)
-    return lst
+    return [i for i in l1 if i not in l2]
 #################################################################################
 import copy
 def EDA_find_remove_columns_with_infinity(df, remove=False):
@@ -36,19 +32,20 @@ def EDA_find_remove_columns_with_infinity(df, remove=False):
     dfx = df[nums]
     sum_rows = np.isinf(dfx).values.sum()
     add_cols =  list(dfx.columns.to_series()[np.isinf(dfx).any()])
-    if sum_rows > 0:
-        print('    there are %d rows and %d columns with infinity in them...' %(sum_rows,len(add_cols)))
-        if remove:
-            ### here you need to use df since the whole dataset is involved ###
-            nocols = [x for x in df.columns if x not in add_cols]
-            print("    Shape of dataset before %s and after %s removing columns with infinity" %(df.shape,(df[nocols].shape,)))
-            return df[nocols]
-        else:
-            ## this will be a list of columns with infinity ####
-            return add_cols
-    else:
+    if sum_rows <= 0:
         ## this will be an empty list if there are no columns with infinity
         return add_cols
+    print('    there are %d rows and %d columns with infinity in them...' %(sum_rows,len(add_cols)))
+    if not remove:
+        ## this will be a list of columns with infinity ####
+        return add_cols
+    ### here you need to use df since the whole dataset is involved ###
+    nocols = [x for x in df.columns if x not in add_cols]
+    print(
+        f"    Shape of dataset before {df.shape} and after {(df[nocols].shape, )} removing columns with infinity"
+    )
+
+    return df[nocols]
 ####################################################################################
 def classify_columns(df_preds, verbose=0):
     """

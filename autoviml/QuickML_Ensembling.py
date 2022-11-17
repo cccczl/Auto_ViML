@@ -65,9 +65,6 @@ def QuickML_Ensembling(X_train, y_train, X_test, y_test='', modeltype='Regressio
                                     random_state=seed, max_depth=1, min_samples_leaf=2
                                     ), n_estimators=NUMS, random_state=seed)
             model_tuples.append(('Adaboost',model5))
-        elif not Boosting_Flag:
-            model5 = LassoLarsCV(cv=scv)
-            model_tuples.append(('LassoLarsCV',model5))
         else:
             model5 = LassoLarsCV(cv=scv)
             model_tuples.append(('LassoLarsCV',model5))
@@ -121,21 +118,18 @@ def QuickML_Ensembling(X_train, y_train, X_test, y_test='', modeltype='Regressio
             model5 = LogisticRegressionCV(Cs=[0.001,0.01,0.1,1,10,100], tol=0.01,
                                           solver='liblinear', random_state=seed)
             model_tuples.append(('Logistic_Regression_CV',model5))
-        if Boosting_Flag is None:
+        if Boosting_Flag is None or Boosting_Flag:
             model6 = DecisionTreeClassifier(max_depth=5,min_samples_leaf=2)
             model_tuples.append(('Decision_Tree',model6))
-        elif not Boosting_Flag:
+        else:
             model6 = LinearSVC()
             model_tuples.append(('Linear_SVC',model6))
-        else:
-            model6 = DecisionTreeClassifier(max_depth=5,min_samples_leaf=2)
-            model_tuples.append(('Decision_Tree',model6))
         if modeltype == 'Binary_Classification':
             model7 = GaussianNB()
         else:
             model7 = MultinomialNB()
         model_tuples.append(('Naive_Bayes',model7))
-        if Boosting_Flag is None:
+        if Boosting_Flag is None or Boosting_Flag:
             #### If the Boosting_Flag is True, it means Boosting model is present.
             ###   So choose a different kind of classifier here
             model8 = RandomForestClassifier(bootstrap = False,
@@ -145,7 +139,7 @@ def QuickML_Ensembling(X_train, y_train, X_test, y_test='', modeltype='Regressio
                                        n_estimators = 200,
                                        random_state=99)
             model_tuples.append(('Bagging_Classifier',model8))
-        elif not Boosting_Flag:
+        else:
             #### If the Boosting_Flag is True, it means Boosting model is present.
             ###   So choose a different kind of classifier here
             sgd_best_model = SGDClassifier(alpha=1e-06,
@@ -158,14 +152,6 @@ def QuickML_Ensembling(X_train, y_train, X_test, y_test='', modeltype='Regressio
                                tol=None)
             model8 = OneVsRestClassifier(sgd_best_model)
             model_tuples.append(('One_vs_Rest_Classifier',model8))
-        else:
-            model8 = RandomForestClassifier(bootstrap = False,
-                                       max_depth = 10,
-                                       max_features = 'auto',
-                                       min_samples_leaf = 2,
-                                       n_estimators = 200,
-                                       random_state=99)
-            model_tuples.append(('Bagging_Classifier',model8))
     model_dict = dict(model_tuples)
     models, results = run_ensemble_models(model_dict, X_train, y_train, X_test, y_test,
                                           scoring, modeltype)
@@ -251,7 +237,10 @@ def run_ensemble_models(model_dict, X_train, y_train, X_test, y_test, scoring, m
                 best_model_name = min(f1_stats.items(), key=operator.itemgetter(1))[0]
             else:
                 best_model_name = max(f1_stats.items(), key=operator.itemgetter(1))[0]
-            print('Based on trying multiple models, Best type of algorithm for this data set is %s' %best_model_name)
+            print(
+                f'Based on trying multiple models, Best type of algorithm for this data set is {best_model_name}'
+            )
+
         except:
             print('Could not detect best algorithm type from ensembling. Continuing...')
     return model_name, stacks
